@@ -3,13 +3,14 @@
  *
  * Unit tests for the calculator functions in src/calculator.js, covering
  * the four basic arithmetic operations (addition, subtraction,
- * multiplication, division) as well as edge cases such as division by
- * zero, negative numbers, decimals, and the generic `calculate` dispatcher.
+ * multiplication, division) as well as modulo, exponentiation, and
+ * square root, plus edge cases such as division/modulo by zero,
+ * negative numbers, decimals, and the generic `calculate` dispatcher.
  *
  * Test framework: Jest.
  */
 
-const { add, subtract, multiply, divide, calculate } = require('../calculator');
+const { add, subtract, multiply, divide, modulo, power, squareRoot, calculate } = require('../calculator');
 
 describe('add', () => {
   // Example from images/calc-basic-operations.png: 2 + 3
@@ -107,6 +108,78 @@ describe('divide', () => {
   });
 });
 
+describe('modulo', () => {
+  test('returns the remainder of two positive numbers (10 % 3 = 1)', () => {
+    expect(modulo(10, 3)).toBe(1);
+  });
+
+  test('returns zero when the dividend is evenly divisible', () => {
+    expect(modulo(9, 3)).toBe(0);
+  });
+
+  test('returns a negative remainder when the dividend is negative', () => {
+    expect(modulo(-10, 3)).toBe(-1);
+  });
+
+  test('works with decimal numbers', () => {
+    expect(modulo(5.5, 2)).toBeCloseTo(1.5);
+  });
+
+  test('throws an error when the divisor is zero', () => {
+    expect(() => modulo(5, 0)).toThrow('Modulo by zero is not allowed.');
+  });
+});
+
+describe('power', () => {
+  test('raises a positive base to a positive exponent (2 ** 8 = 256)', () => {
+    expect(power(2, 8)).toBe(256);
+  });
+
+  test('raises a number to the power of zero (result is 1)', () => {
+    expect(power(5, 0)).toBe(1);
+  });
+
+  test('raises a number to the power of one (result is itself)', () => {
+    expect(power(7, 1)).toBe(7);
+  });
+
+  test('raises a negative base to an even exponent (positive result)', () => {
+    expect(power(-3, 2)).toBe(9);
+  });
+
+  test('raises a negative base to an odd exponent (negative result)', () => {
+    expect(power(-2, 3)).toBe(-8);
+  });
+
+  test('raises a number to a negative exponent (fractional result)', () => {
+    expect(power(2, -1)).toBeCloseTo(0.5);
+  });
+});
+
+describe('squareRoot', () => {
+  test('returns the square root of a perfect square (√9 = 3)', () => {
+    expect(squareRoot(9)).toBe(3);
+  });
+
+  test('returns the square root of zero (√0 = 0)', () => {
+    expect(squareRoot(0)).toBe(0);
+  });
+
+  test('returns the square root of a non-perfect square', () => {
+    expect(squareRoot(2)).toBeCloseTo(1.4142135623730951);
+  });
+
+  test('returns the square root of a decimal', () => {
+    expect(squareRoot(0.25)).toBeCloseTo(0.5);
+  });
+
+  test('throws an error for a negative number', () => {
+    expect(() => squareRoot(-4)).toThrow(
+      'Square root of a negative number is not allowed.'
+    );
+  });
+});
+
 describe('calculate', () => {
   test('dispatches addition via "+" operator', () => {
     expect(calculate(2, '+', 3)).toBe(5);
@@ -144,13 +217,47 @@ describe('calculate', () => {
     expect(calculate(20, 'div', 5)).toBe(4);
   });
 
+  test('dispatches modulo via "%" operator', () => {
+    expect(calculate(10, '%', 3)).toBe(1);
+  });
+
+  test('dispatches modulo via "mod" alias', () => {
+    expect(calculate(10, 'mod', 3)).toBe(1);
+  });
+
+  test('dispatches exponentiation via "**" operator', () => {
+    expect(calculate(2, '**', 8)).toBe(256);
+  });
+
+  test('dispatches exponentiation via "^" alias', () => {
+    expect(calculate(2, '^', 8)).toBe(256);
+  });
+
+  test('dispatches exponentiation via "pow" alias', () => {
+    expect(calculate(2, 'pow', 8)).toBe(256);
+  });
+
+  test('dispatches square root via "sqrt" operator (unary)', () => {
+    expect(calculate(9, 'sqrt')).toBe(3);
+  });
+
   test('throws an error for an unsupported operator', () => {
-    expect(() => calculate(1, '%', 2)).toThrow(
-      'Unsupported operator "%". Supported operators: + - * /'
+    expect(() => calculate(1, '??', 2)).toThrow(
+      'Unsupported operator "??". Supported operators: + - * / % ** sqrt'
     );
   });
 
   test('propagates division-by-zero error through calculate', () => {
     expect(() => calculate(5, '/', 0)).toThrow('Division by zero is not allowed.');
+  });
+
+  test('propagates modulo-by-zero error through calculate', () => {
+    expect(() => calculate(5, '%', 0)).toThrow('Modulo by zero is not allowed.');
+  });
+
+  test('propagates square-root-of-negative error through calculate', () => {
+    expect(() => calculate(-4, 'sqrt')).toThrow(
+      'Square root of a negative number is not allowed.'
+    );
   });
 });
